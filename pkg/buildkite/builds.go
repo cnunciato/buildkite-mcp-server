@@ -717,7 +717,7 @@ func isTerminalState(state string) bool {
 func completedJobs(jobs []buildkite.Job) (total int, remaining int) {
 	total = len(jobs)
 	for _, job := range jobs {
-		if isTerminalState(job.State) {
+		if !isTerminalState(job.State) {
 			remaining++
 		}
 	}

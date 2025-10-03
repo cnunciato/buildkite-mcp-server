@@ -645,3 +645,52 @@ func TestCalculatePercentage(t *testing.T) {
 	result = calculatePercentage(1, 0)
 	assert.Equal(100, result) // (1-0)*100/1 = 100%
 }
+
+func TestCompletedJobs(t *testing.T) {
+	assert := require.New(t)
+
+	// Test all jobs completed
+	jobs := []buildkite.Job{
+		{State: "passed"},
+		{State: "failed"},
+		{State: "canceled"},
+	}
+	total, remaining := completedJobs(jobs)
+	assert.Equal(3, total)
+	assert.Equal(0, remaining) // All jobs are in terminal state, so 0 remaining
+
+	// Test some jobs still running
+	jobs = []buildkite.Job{
+		{State: "passed"},    // terminal
+		{State: "running"},   // non-terminal
+		{State: "scheduled"}, // non-terminal
+		{State: "failed"},    // terminal
+	}
+	total, remaining = completedJobs(jobs)
+	assert.Equal(4, total)
+	assert.Equal(2, remaining) // 2 jobs are still running/scheduled
+
+	// Test no jobs completed
+	jobs = []buildkite.Job{
+		{State: "running"},
+		{State: "scheduled"},
+		{State: "waiting"},
+	}
+	total, remaining = completedJobs(jobs)
+	assert.Equal(3, total)
+	assert.Equal(3, remaining) // All jobs are non-terminal, so 3 remaining
+
+	// Test empty job list
+	jobs = []buildkite.Job{}
+	total, remaining = completedJobs(jobs)
+	assert.Equal(0, total)
+	assert.Equal(0, remaining)
+
+	// Test single completed job
+	jobs = []buildkite.Job{
+		{State: "passed"},
+	}
+	total, remaining = completedJobs(jobs)
+	assert.Equal(1, total)
+	assert.Equal(0, remaining) // Job is completed, so 0 remaining
+}
